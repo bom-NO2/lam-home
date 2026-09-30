@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Hiệu sách – Tìm và xem sách</title>
+<style>
+:root{--bg:#f3f6f4;--card:#fff;--ink:#16302b;--mute:#5d726d;--line:#d5e0dc;--accent:#1f6f5c;--accent-ink:#fff;--warn:#a4472b;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1c19;--card:#182a26;--ink:#e6f0ed;--mute:#9bb2ac;--line:#2b423d;--accent:#4fc0a3;--accent-ink:#0f1c19;--warn:#f0a084}}
+:root[data-theme="dark"]{--bg:#0f1c19;--card:#182a26;--ink:#e6f0ed;--mute:#9bb2ac;--line:#2b423d;--accent:#4fc0a3;--accent-ink:#0f1c19;--warn:#f0a084}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 "Be Vietnam Pro","Segoe UI",system-ui,sans-serif}
+main{max-width:720px;margin:0 auto;padding:20px 16px 40px}
+h1{font-size:1.5rem;margin:0 0 4px}
+.sub{color:var(--mute);margin:0 0 16px}
+.bar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+input,select,button{font:inherit;color:inherit}
+input[type=search]{flex:1 1 220px;padding:12px;border:1px solid var(--line);border-radius:8px;background:var(--card)}
+select{padding:12px;border:1px solid var(--line);border-radius:8px;background:var(--card)}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.count{color:var(--mute);font-size:.9rem;margin:0 0 10px}
+.list{list-style:none;padding:0;margin:0;display:grid;gap:10px}
+.item{width:100%;text-align:left;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px;cursor:pointer;display:flex;justify-content:space-between;gap:12px}
+.item:hover{border-color:var(--accent)}
+.t{font-weight:600}
+.a{color:var(--mute);font-size:.9rem}
+.p{font-weight:600;white-space:nowrap}
+.badge{display:inline-block;font-size:.8rem;padding:2px 8px;border-radius:99px;border:1px solid var(--line);margin-top:6px}
+.badge.out{color:var(--warn);border-color:var(--warn)}
+.empty{background:var(--card);border:1px dashed var(--line);border-radius:10px;padding:24px;text-align:center}
+.empty button{margin-top:10px}
+.btn{background:var(--accent);color:var(--accent-ink);border:0;border-radius:8px;padding:10px 16px;cursor:pointer}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+.detail{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:18px}
+dl{display:grid;grid-template-columns:120px 1fr;gap:8px 12px;margin:14px 0}
+dt{color:var(--mute)}dd{margin:0}
+.ed{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
+.ed button{border:1px solid var(--line);background:transparent;border-radius:8px;padding:8px 12px;cursor:pointer}
+.ed button[aria-pressed=true]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.price{font-size:1.4rem;font-weight:700}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<main>
+  <section id="viewList">
+    <h1>Hiệu sách</h1>
+    <p class="sub">Tìm theo tên sách hoặc tác giả, hoặc chọn danh mục.</p>
+    <div class="bar">
+      <input id="q" type="search" placeholder="Nhập tên sách hoặc tác giả" aria-label="Tìm sách">
+      <select id="cat" aria-label="Danh mục"></select>
+    </div>
+    <p class="count" id="count" aria-live="polite"></p>
+    <ul class="list" id="list"></ul>
+    <div class="empty" id="empty" hidden>
+      <p><strong>Không tìm thấy sách phù hợp.</strong><br>Thử từ khóa khác hoặc xem tất cả danh mục.</p>
+      <button class="btn" id="reset">Xem tất cả sách</button>
+    </div>
+  </section>
+
+  <section id="viewDetail" hidden>
+    <button class="btn ghost" id="back">Quay lại danh sách</button>
+    <div class="detail" style="margin-top:12px">
+      <h1 id="dTitle"></h1>
+      <p class="a" id="dAuthor"></p>
+      <div class="ed" id="dEds" role="group" aria-label="Chọn ấn bản"></div>
+      <div class="price" id="dPrice"></div>
+      <dl>
+        <dt>Tác giả</dt><dd id="dA"></dd>
+        <dt>Nhà xuất bản</dt><dd id="dPub"></dd>
+        <dt>Ấn bản</dt><dd id="dEd"></dd>
+        <dt>Tồn hàng</dt><dd id="dStock"></dd>
+      </dl>
+    </div>
+  </section>
+</main>
+
+<script>
+const BOOKS=[
+ {id:1,title:"Dế Mèn phiêu lưu ký",author:"Tô Hoài",cat:"Thiếu nhi",eds:[
+  {name:"Bìa mềm 2020",pub:"NXB Kim Đồng",price:58000,stock:24},
+  {name:"Bìa cứng 2023",pub:"NXB Kim Đồng",price:96000,stock:0}]},
+ {id:2,title:"Nhà giả kim",author:"Paulo Coelho",cat:"Văn học",eds:[
+  {name:"Bản dịch 2017",pub:"NXB Văn học",price:79000,stock:12}]},
+ {id:3,title:"Đắc nhân tâm",author:"Dale Carnegie",cat:"Kỹ năng",eds:[
+  {name:"Bìa mềm 2019",pub:"NXB Tổng hợp TP.HCM",price:86000,stock:40},
+  {name:"Khổ lớn 2022",pub:"NXB Tổng hợp TP.HCM",price:118000,stock:5}]},
+ {id:4,title:"Sapiens: Lược sử loài người",author:"Yuval Noah Harari",cat:"Lịch sử",eds:[
+  {name:"Bìa mềm 2021",pub:"NXB Thế giới",price:229000,stock:8}]},
+ {id:5,title:"Tôi thấy hoa vàng trên cỏ xanh",author:"Nguyễn Nhật Ánh",cat:"Văn học",eds:[
+  {name:"Bìa mềm 2018",pub:"NXB Trẻ",price:98000,stock:0}]},
+ {id:6,title:"Thời đại thứ tư",author:"Byron Reese",cat:"Công nghệ",eds:[
+  {name:"Bản gốc 2008",pub:"Prentice Hall",price:650000,stock:3}]}
+];
+const $=id=>document.getElementById(id);
+const vnd=n=>n.toLocaleString("vi-VN")+" ₫"; // một định dạng giá duy nhất
+const norm=s=>s.normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/đ/g,"d").toLowerCase();
+const cats=["Tất cả danh mục",...new Set(BOOKS.map(b=>b.cat))];
+$("cat").innerHTML=cats.map((c,i)=>`<option value="${i?c:""}">${c}</option>`).join("");
+
+function stockBadge(e){return e.stock>0?`<span class="badge">Còn ${e.stock} cuốn</span>`:`<span class="badge out">Hết hàng</span>`}
+function esc(s){return s.replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
+
+function render(){
+  const q=norm($("q").value.trim()),c=$("cat").value;
+  const res=BOOKS.filter(b=>(!c||b.cat===c)&&(!q||norm(b.title).includes(q)||norm(b.author).includes(q)));
+  $("list").innerHTML=res.map(b=>{
+    const e=b.eds[0],min=Math.min(...b.eds.map(x=>x.price));
+    const any=b.eds.some(x=>x.stock>0);
+    return `<li><button class="item" data-id="${b.id}"><span><span class="t">${esc(b.title)}</span><br><span class="a">${esc(b.author)} · ${esc(b.cat)}</span><br>${any?`<span class="badge">Còn hàng</span>`:`<span class="badge out">Hết hàng</span>`}</span><span class="p">${b.eds.length>1?"Từ ":""}${vnd(min)}</span></button></li>`}).join("");
+  $("empty").hidden=res.length>0;
+  $("count").textContent=res.length?`${res.length} sách`:"";
+}
+
+let cur=null,ei=0;
+function showDetail(id,idx=0){
+  cur=BOOKS.find(b=>b.id===id);ei=idx;const e=cur.eds[idx];
+  $("dTitle").textContent=cur.title;$("dAuthor").textContent=cur.author;
+  $("dEds").innerHTML=cur.eds.map((x,i)=>`<button data-i="${i}" aria-pressed="${i===idx}">${esc(x.name)}</button>`).join("");
+  $("dPrice").textContent=vnd(e.price);
+  $("dA").textContent=cur.author;$("dPub").textContent=e.pub;$("dEd").textContent=e.name;
+  $("dStock").innerHTML=e.stock>0?`Còn ${e.stock} cuốn`:`<span style="color:var(--warn)">Hết hàng</span>`;
+  $("viewList").hidden=true;$("viewDetail").hidden=false;window.scrollTo(0,0);
+}
+$("q").addEventListener("input",render);
+$("cat").addEventListener("change",render);
+$("reset").onclick=()=>{$("q").value="";$("cat").value="";render()};
+$("list").addEventListener("click",e=>{const b=e.target.closest(".item");if(b)showDetail(+b.dataset.id)});
+$("dEds").addEventListener("click",e=>{const b=e.target.closest("button");if(b)showDetail(cur.id,+b.dataset.i)});
+$("back").onclick=()=>{$("viewDetail").hidden=true;$("viewList").hidden=false};
+render();
+</script>
+</body>
+</html>
